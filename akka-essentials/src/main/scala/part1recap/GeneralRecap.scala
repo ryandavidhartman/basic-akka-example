@@ -39,4 +39,50 @@ object GeneralRecap extends App {
     else factorial(n-1, acc*n)
 
   assert(factorial(3) == 6)
+
+  // OOP
+  class Animal
+  private class Dog extends Animal
+  private val aDog: Animal = new Dog
+
+  private trait Carnivore {
+    def eat(a: Animal): Unit
+  }
+
+  private class Crocodile extends Animal with Carnivore {
+    override def eat(a: Animal): Unit = println("crunch")
+  }
+
+  // method notations
+  private val aCroc = new Crocodile
+  aCroc.eat(aDog)  // same as the following
+  aCroc eat aDog
+
+  // anonymous classes - make a new anonymous class by directly
+  // implementing a required method for a trait
+  private val aCarnivore = new Carnivore {
+    override def eat(a: Animal): Unit = "wow an anonymous class"
+  }
+
+  aCarnivore eat aDog
+
+  // generics
+  abstract class MyList[+T]
+  // companion objects
+  object MyList
+
+  // case classes
+  case class Person(name: String, age: Int)
+
+  // Exceptions
+  private val aPotentialException: String = try {
+    throw new RuntimeException("failed")  //type Nothing!
+  } catch {
+    case e: Exception => "I caught an exception"
+  } finally {
+    // side effects
+    println("some stuff for the logs")
+  }
+
+
 }
