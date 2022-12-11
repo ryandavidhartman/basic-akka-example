@@ -1,5 +1,8 @@
 package part1recap
 
+import javax.management.InvalidApplicationException
+import scala.util.Try
+
 object GeneralRecap extends App {
   private val aCondition: Boolean = false //how to declare an immutable val
   private var aVariable = 1  //how to declare a variable, reassignment is allowed
@@ -76,13 +79,62 @@ object GeneralRecap extends App {
 
   // Exceptions
   private val aPotentialException: String = try {
-    throw new RuntimeException("failed")  //type Nothing!
+    throw new InvalidApplicationException("failed")  //type Nothing!
   } catch {
-    case e: Exception => "I caught an exception"
+    case e: Exception => s"I caught an exception: ${e.getMessage}"
   } finally {
     // side effects
     println("some stuff for the logs")
   }
 
+  // Functional Programming
+  // functions are objects in Scala
+
+  private val incrementer1 = (v1:Int) => v1 + 1
+
+  // same as
+
+  private val incrementer2 = new Function[Int, Int] {
+    override def apply(v1: Int): Int = v1 + 1
+  }
+
+  // i.e. type Int => Int is sugar for the type Function1[Int, Int
+
+  (0 to 10) foreach { i => assert(incrementer1(i) == incrementer2(i)) }
+
+  // FP is about working with functions as first class data types
+
+  List(1,2,3).map(incrementer1) //works since map is a HIGHER ORDER FUNCTION (HOF) and takes a function
+  // as a parameter
+
+  // for comprehensions
+
+  private val pairs1 = for {
+    num <- List(1,2,3)
+    char <- List ('a', 'b', 'c')
+  } yield num + "-" + char
+
+  private val pairs2 = List(1,2,3).flatMap(num => List('a', 'b',  'c').map(char => num + "-" + char))
+
+  assert(pairs1 == pairs2)
+
+  // Scala collections Seq, Array, Vector, Map, Tuples and Sets
+
+  // Other "collections" Options and Try
+  private val anOption = Some(2)
+  assert(anOption.isDefined)
+  private val aTry = Try(throw new RuntimeException("ouch1!"))
+  assert(aTry.isFailure)
+
+
+  // Pattern Matching
+  private val unknown = 2
+  private val order = unknown match {
+    case 1 => "first"
+    case 2 => "second"
+    case _ => "something else"
+  }
+
+  assert(order == "second")
 
 }
