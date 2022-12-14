@@ -1,5 +1,6 @@
 package part1recap
 
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 object AdvancedRecap extends App {
@@ -92,6 +93,28 @@ object AdvancedRecap extends App {
 
   "Mimi".bark // this works too!  The Compiler replaces it with new Dog("Mimi").bark
 
+  // Organizing Implicits
+  // implicit in LOCAL SCOPE
+  implicit val inverseOrdering: Ordering[Int] = Ordering.fromLessThan(_ > _)
+  val sorted1 = List(1,2,3).sorted  // takes an implicit sorting parameter
+  assert(sorted1 == List(3,2,1))
+
+  // implicit in IMPORTED SCOPE
+  import scala.concurrent.ExecutionContext.Implicits.global
+  val future = Future {
+    println(("hello, future"))
+  }
+
+  // implicit in a Companion Object
+  object Person {
+    implicit val personOrdering: Ordering[Person] = Ordering.fromLessThan((a, b) => a.name.compareTo(b.name) < 0)
+  }
+
+  val peopleSorted = List(Person("steve"), Person("alice"), Person("bob")).sorted
+  assert(peopleSorted == List(Person("alice"), Person("bob"), Person("steve")) )
+
+  // IMPLICIT FETCH ORDER:
+  // Local scope, imported scope, companion objects of included types
 
 
 
