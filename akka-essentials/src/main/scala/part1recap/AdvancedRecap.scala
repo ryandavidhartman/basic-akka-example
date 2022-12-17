@@ -1,6 +1,7 @@
 package part1recap
 
 import scala.concurrent.Future
+import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
 object AdvancedRecap extends App {
@@ -35,9 +36,12 @@ object AdvancedRecap extends App {
   // Partial Functions are subtypes of Functions
   // i.e. we can use a PF where ever we use a regular function
 
-  val function: (Int => Int) = pf1
+  private val function: (Int => Int) = pf1
+  assert(function(1) == pf2(1))
 
   val modifiedList = Try { List(1,2,3).map(pf2) }
+
+  assert(modifiedList.isFailure)
 
   // Define a PF on the fly
 
@@ -46,17 +50,19 @@ object AdvancedRecap extends App {
     case _ => 0
   }
 
+  assert(modifiedList2 == List(42, 0, 0))
+
   // Lifting Partial Functions
   val lifted = pf2.lift  // (Int => Option[Int])
   assert(lifted(1) == Some(42))
   assert(lifted(100) == None)
 
   // Chaining Partial Functions
-  val pfChain = pf2.orElse[Int, Int] {
+  val pfChain: PartialFunction[Int, Int] = pf2.orElse[Int, Int] {
     case 99 => 101
   }
   assert(pfChain(1) == 42)
-  assert(pfChain.lift(100) == None)
+  assert(pfChain.lift(100).isEmpty)
   assert(pfChain(99) == 101)
 
 
@@ -68,9 +74,11 @@ object AdvancedRecap extends App {
     case _ => println("Confused...")
   }
 
+  assert(receive(1) == () )
+
   // Implicit vals
-  implicit val timeout = 3000
-  def callWithTimeout(f: () => Unit)(implicit timeout: Int) = f()
+  implicit val timeout: Int = 3000
+  def callWithTimeout(f: () => Unit)(implicit timeout: Int): Unit = f()
   callWithTimeout(() => println("hi"))  //works because we have an implicit int in scope!
 
   // Implicit conversions
@@ -78,20 +86,20 @@ object AdvancedRecap extends App {
   // Implicit defs
   // Given:
   case class Person(name: String) {
-    def greet = println(s"Hi, my name is $name")
+    def greet(): Unit = println(s"Hi, my name is $name")
   }
 
   implicit def fromStringToPerson(string: String): Person = Person(string)
 
-  "Ryan".greet //this works!  The Compiler replaces it with: fromStringToPerson("Ryan").greet
+  "Ryan".greet() //this works!  The Compiler replaces it with: fromStringToPerson("Ryan").greet
 
 
   //  Implicit classes
   implicit class Dog(name: String) {
-    def bark = println("bark!")
+    def bark(): Unit = println("bark!")
   }
 
-  "Mimi".bark // this works too!  The Compiler replaces it with new Dog("Mimi").bark
+  "Mimi".bark() // this works too!  The Compiler replaces it with new Dog("Mimi").bark
 
   // Organizing Implicits
   // implicit in LOCAL SCOPE
@@ -102,7 +110,7 @@ object AdvancedRecap extends App {
   // implicit in IMPORTED SCOPE
   import scala.concurrent.ExecutionContext.Implicits.global
   val future = Future {
-    println(("hello, future"))
+    println("hello, future")
   }
 
   // implicit in a Companion Object
