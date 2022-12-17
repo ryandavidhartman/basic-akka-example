@@ -36,7 +36,7 @@ object AdvancedRecap extends App {
   // Partial Functions are subtypes of Functions
   // i.e. we can use a PF where ever we use a regular function
 
-  private val function: (Int => Int) = pf1
+  private val function: Int => Int = pf1
   assert(function(1) == pf2(1))
 
   val modifiedList = Try { List(1,2,3).map(pf2) }
@@ -53,9 +53,9 @@ object AdvancedRecap extends App {
   assert(modifiedList2 == List(42, 0, 0))
 
   // Lifting Partial Functions
-  val lifted = pf2.lift  // (Int => Option[Int])
-  assert(lifted(1) == Some(42))
-  assert(lifted(100) == None)
+  private val lifted = pf2.lift  // (Int => Option[Int])
+  assert(lifted(1).contains(42))
+  assert(lifted(100).isEmpty)
 
   // Chaining Partial Functions
   val pfChain: PartialFunction[Int, Int] = pf2.orElse[Int, Int] {
