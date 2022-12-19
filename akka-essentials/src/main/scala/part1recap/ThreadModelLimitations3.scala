@@ -6,6 +6,7 @@ import scala.concurrent.{ExecutionContext, Future}
 object ThreadModelLimitations3 {
 
   // DR #3: tracing and dealing with errors is a PITN in multithreaded/distributed apps
+  // even with Futures
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(8))
   // sum 1M numbers in between 10 threads
