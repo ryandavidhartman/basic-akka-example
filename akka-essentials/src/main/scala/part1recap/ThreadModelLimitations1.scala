@@ -41,7 +41,10 @@ object ThreadModelLimitations1 extends App {
     - We manually repaired this simple example, with locks (i.e. the synchronized block) but repair to encapsulation
       needed us to fix every method/var in the class
 
-    In more complex examples we still face some issues:
+    In more complex examples we still face some issues.  E.g. in a DISTRIBUTED environment how can we in do the locking
+    efficiently.
+
+    Problems with manual threading
     - we don't know when the threads are finished
     - race conditions
     - other problems:
