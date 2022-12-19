@@ -35,12 +35,17 @@ object ThreadModelLimitations1 extends App {
   demoRace()
 }
 
+
+
   /*
+    - We manually repaired this simple example, with locks (i.e. the synchronized block) but repair to encapsulation
+      needed us to fix every method/var in the class
+
+    In more complex examples we still face some issues:
     - we don't know when the threads are finished
     - race conditions
-    solution: synchronization
-    other problems:
-      - deadlocks
-      - livelocks
+    - other problems:
+       - deadlocks
+       - livelocks
    */
 
