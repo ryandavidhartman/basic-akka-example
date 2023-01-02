@@ -75,7 +75,8 @@ object ActorCapabilities extends App {
   class SimpleActorFour extends Actor {
     override def receive: Receive = {
       case message: String => println(s"[$self] received a string $message from [$sender()]")
-      case ForwardThisTo(data, ref) => ref forward  data
+      case ForwardThisTo(data, ref) => ref forward data  // forward is a "tell" with the sender set original actor not
+        // the actor it came from (i.e. this one)
     }
   }
 
