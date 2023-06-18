@@ -1,8 +1,7 @@
-package com.interpayments
+package com.interpayments.quickstart
 
+import com.interpayments.quickstart.Greeter.{Greet, Greeted}
 import org.apache.pekko.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import Greeter.Greet
-import Greeter.Greeted
 import org.scalatest.wordspec.AnyWordSpecLike
 
 

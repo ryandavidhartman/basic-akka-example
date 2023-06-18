@@ -1,10 +1,8 @@
-package com.interpayments
+package com.interpayments.quickstart
 
-import org.apache.pekko.actor.typed.ActorRef
-import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Behavior
+import com.interpayments.quickstart.GreeterMain.SayHello
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import GreeterMain.SayHello
+import org.apache.pekko.actor.typed.{ActorRef, ActorSystem, Behavior}
 
 object Greeter {
   final case class Greet(whom: String, replyTo: ActorRef[Greeted])

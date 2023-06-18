@@ -1,33 +1,21 @@
-package com.interpayments
+package com.interpayments.persistence
 
-package com.interpayments
-
+import com.interpayments.persistence.Messages._
 import org.apache.pekko.actor._
 import org.apache.pekko.pattern.ask
 import org.apache.pekko.persistence._
 import org.apache.pekko.util.Timeout
 
 import java.time.LocalDateTime.now
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.ZoneOffset
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
-
-case class Cmd(data: String, ts: LocalDateTime)
-case class State(data: String, ts: LocalDateTime)
-case class GetStateAtTimestamp(time: LocalDateTime)
-
-case class HistoricalStates(states: List[State] = Nil) {
-  def updated(newState: State): HistoricalStates = copy(newState :: states)
-  def size: Int = states.length
-  override def toString: String = states.reverse.toString
-}
-
-class ExamplePersistentActor extends PersistentActor with ActorLogging {
-  override def persistenceId: String = "sample-id-1"
+class ExamplePersistentActor2 extends PersistentActor with ActorLogging {
+  override def persistenceId: String = "example-persistent-actor-2"
 
   var historicalStates: HistoricalStates = HistoricalStates()
   def updateState(event: State): Unit =
@@ -63,11 +51,11 @@ class ExamplePersistentActor extends PersistentActor with ActorLogging {
 
 }
 
-object PekkoPersistenceExample extends App {
+object PekkoPersistenceExample2 extends App {
 
   //#actor-system
-  val system: ActorSystem = ActorSystem("pekko-persistence-example")
-  val persistentActor = system.actorOf(Props[ExamplePersistentActor], "my-persistent-actor")
+  val system: ActorSystem = ActorSystem("pekko-persistence-example2")
+  val persistentActor = system.actorOf(Props[ExamplePersistentActor2], "my-persistent-actor-2")
 
   (0 to 100).foreach(i => persistentActor ! Cmd(s"state", now.minusHours(100-i)))
 

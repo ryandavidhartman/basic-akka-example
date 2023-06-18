@@ -1,12 +1,13 @@
-package com.interpayments
+package com.interpayments.persistence
 
+import com.interpayments.persistence.Messages._
 import org.apache.pekko.actor._
 import org.apache.pekko.pattern.ask
 import org.apache.pekko.persistence._
 import org.apache.pekko.util.Timeout
 
 import java.time.LocalDateTime.now
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.ZoneOffset
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
@@ -14,18 +15,8 @@ import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
 
-case class Cmd(data: String, ts: LocalDateTime)
-case class State(data: String, ts: LocalDateTime)
-case class GetStateAtTimestamp(time: LocalDateTime)
-
-case class HistoricalStates(states: List[State] = Nil) {
-  def updated(newState: State): HistoricalStates = copy(newState :: states)
-  def size: Int = states.length
-  override def toString: String = states.reverse.toString
-}
-
 class ExamplePersistentActor extends PersistentActor with ActorLogging {
-  override def persistenceId: String = "sample-id-1"
+  override def persistenceId: String = "example-persistent-actor-1"
 
   var historicalStates: HistoricalStates = HistoricalStates()
     def updateState(event: State): Unit =
@@ -71,7 +62,7 @@ object PekkoPersistenceExample extends App {
 
   persistentActor ! "print"
 
-  implicit val timeout: Timeout = (10 seconds)
+  implicit val timeout: Timeout = 10 seconds
   val stateInThePast: Future[Any] = persistentActor ? GetStateAtTimestamp(now.minusHours(25))
 
   stateInThePast.onComplete {
