@@ -1,14 +1,11 @@
-//#full-example
 package com.interpayments
-
 
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import com.interpayments.GreeterMain.SayHello
+import GreeterMain.SayHello
 
-//#greeter-actor
 object Greeter {
   final case class Greet(whom: String, replyTo: ActorRef[Greeted])
   final case class Greeted(whom: String, from: ActorRef[Greet])
@@ -21,9 +18,6 @@ object Greeter {
     Behaviors.same
   }
 }
-//#greeter-actor
-
-//#greeter-bot
 object GreeterBot {
 
   def apply(max: Int): Behavior[Greeter.Greeted] = {
@@ -42,9 +36,6 @@ object GreeterBot {
       }
     }
 }
-//#greeter-bot
-
-//#greeter-main
 object GreeterMain {
 
   final case class SayHello(name: String)
@@ -64,17 +55,8 @@ object GreeterMain {
       }
     }
 }
-//#greeter-main
-
-//#main-class
 object PekkoQuickstart extends App {
-  //#actor-system
   val greeterMain: ActorSystem[GreeterMain.SayHello] = ActorSystem(GreeterMain(), "PekkoQuickstart")
-  //#actor-system
-
-  //#main-send-messages
   greeterMain ! SayHello("Charles")
-  //#main-send-messages
 }
-//#main-class
-//#full-example
+
