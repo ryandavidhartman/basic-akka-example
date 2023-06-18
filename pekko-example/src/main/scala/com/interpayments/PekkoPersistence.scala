@@ -82,3 +82,81 @@ object PekkoPersistenceExample extends App {
   }
 
 }
+
+/*
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
+import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
+
+// Step 2: Define the persistent actor
+class MyPersistentActor extends PersistentActor with ActorLogging {
+  // Step 3: Define state and events
+  case class MyState(data: List[String] = Nil)
+
+  var state = MyState()
+
+  override def persistenceId: String = "my-persistent-actor"
+
+  // Step 4: Handle commands
+  override def receiveCommand: Receive = {
+    case AddData(data) =>
+      // Step 6: Persist events
+      persist(DataAdded(data)) { event =>
+        state = applyEvent(event)
+        log.info(s"Data '$data' added.")
+      }
+    case PrintData =>
+      log.info(s"Current data: ${state.data}")
+    case RevertToSnapshot(snapshotId) =>
+      // Step 8: Revert to a previous state
+      deleteSnapshots(SnapshotSelectionCriteria(maxSequenceNr = snapshotId))
+    case _ =>
+      log.info("Unknown command.")
+  }
+
+  // Step 5: Handle events
+  override def receiveRecover: Receive = {
+    case event: DataAdded =>
+      state = applyEvent(event)
+    case SnapshotOffer(_, snapshot: MyState) =>
+      state = snapshot
+    case RecoveryCompleted =>
+      log.info("Recovery completed.")
+  }
+
+  def applyEvent(event: Event): MyState = {
+    event match {
+      case DataAdded(data) =>
+        state.copy(data = data :: state.data)
+    }
+  }
+
+  // Step 3: Define events
+  sealed trait Event
+  case class DataAdded(data: String) extends Event
+
+  // Step 4: Define commands
+  sealed trait Command
+  case class AddData(data: String) extends Command
+  case object PrintData extends Command
+  case class RevertToSnapshot(snapshotId: Long) extends Command
+}
+
+object Main extends App {
+  val system = ActorSystem("PersistenceExample")
+  val persistentActor = system.actorOf(Props[MyPersistentActor], "myPersistentActor")
+
+  // Step 4: Send commands to the persistent actor
+  persistentActor ! AddData("Data 1")
+  persistentActor ! AddData("Data 2")
+  persistentActor ! PrintData
+
+  // Step 8: Revert to a previous state
+  persistentActor ! RevertToSnapshot(1)
+
+  // After reverting, the actor will be in the state before adding "Data 2"
+  persistentActor ! PrintData
+
+  system.terminate()
+}
+
+ */
