@@ -1,128 +1,84 @@
 package com.interpayments
 
-//import org.apache.pekko.actor._
-//import org.apache.pekko.persistence
-//import org.apache.pekko.persistence._
-//import org.apache.pekko.persistence.serialization.Snapshot
-
-import akka.actor._
-import akka.persistence
-import akka.persistence._
-import akka.persistence.serialization.Snapshot
-import akka.persistence.Recovery
+import org.apache.pekko.actor._
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.persistence._
 
 import java.time.LocalDateTime.now
 import java.time.{LocalDateTime, ZoneOffset}
+import scala.util.{Success, Try}
+import org.apache.pekko.util.Timeout
 
-case class Cmd(data: String)
-case class Evt(data: String)
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.language.postfixOps
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{Success, Failure}
 
-case class ExampleState(events: List[String] = Nil) {
-  def updated(evt: Evt): ExampleState = copy(evt.data :: events)
-  def size: Int = events.length
-  override def toString: String = events.reverse.toString
+
+case class Cmd(data: String, ts: LocalDateTime)
+case class State(data: String, ts: LocalDateTime)
+case class GetStateAtTimestamp(time: LocalDateTime)
+
+case class HistoricalStates(states: List[State] = Nil) {
+  def updated(newState: State): HistoricalStates = copy(newState :: states)
+  def size: Int = states.length
+  override def toString: String = states.reverse.toString
 }
 
 class ExamplePersistentActor extends PersistentActor with ActorLogging {
   override def persistenceId: String = "sample-id-1"
 
-  var state = ExampleState()
+  var historicalStates: HistoricalStates = HistoricalStates()
+    def updateState(event: State): Unit =
+    historicalStates = historicalStates.updated(event)
 
-  def updateState(event: Evt): Unit =
-    state = state.updated(event)
-
-  def numEvents: Int = state.size
+  def numEvents: Int = historicalStates.size
 
   val receiveRecover: Receive = {
-    case evt: Evt => updateState(evt)
-    case SnapshotOffer(_, snapshot: ExampleState) => state = snapshot
+    case evt: State => updateState(evt)
+    case SnapshotOffer(_, snapshot: HistoricalStates) => historicalStates = snapshot
   }
 
-  val snapShotInterval = 1000
+  val snapShotInterval = 10
 
   val receiveCommand: Receive = {
-    case Cmd(data) =>
-      persist(Evt(s"$data-$numEvents")) { event =>
+    case Cmd(data, ts) =>
+      persist(State(s"$data-$numEvents", ts)) { event =>
         updateState(event)
         context.system.eventStream.publish(event)
         if (lastSequenceNr % snapShotInterval == 0 && lastSequenceNr != 0)
-          saveSnapshot(state)
+          saveSnapshot(historicalStates)
       }
 
-    case "print" => println(state)
+    case GetStateAtTimestamp(time) =>
+      val stateAtTimestamp = Try {
+        val eventsBeforeCutoff = historicalStates.states.filter(_.ts.toEpochSecond(ZoneOffset.UTC) < time.toEpochSecond(ZoneOffset.UTC))
+        eventsBeforeCutoff.head
+      } getOrElse HistoricalStates()
+      sender ! stateAtTimestamp
+
+    case "print" => println(historicalStates)
   }
+
 }
 
-object PekkoPeristenceExample extends App {
+object PekkoPersistenceExample extends App {
 
   //#actor-system
   val system: ActorSystem = ActorSystem("pekko-persistence-example")
   val persistentActor = system.actorOf(Props[ExamplePersistentActor], "my-persistent-actor")
 
-  (0 to 100).foreach(i => persistentActor ! Cmd(s"state-$i"))
+  (0 to 100).foreach(i => persistentActor ! Cmd(s"state", now.minusHours(100-i)))
 
   persistentActor ! "print"
 
+  implicit val timeout: Timeout = (10 seconds)
+  val stateInThePast: Future[Any] = persistentActor ? GetStateAtTimestamp(now.minusHours(25))
 
-}
-
-/*
-import akka.persistence.{ Snapshot, Recovery }
-
-
-
-def findStateAtTime(persistenceId: String, time: LocalDateTime): Option[State] = {
-
-  // Get the snapshot or events that were persisted for the object.
-
-  val snapshot: Option[Snapshot] = persistence.snapshot.get(persistenceId)
-  val events: Seq[Event] = persistence.recovery.get(persistenceId)
-
-
-
-  // Replay the events to reconstruct the state of the object.
-  val state = events.foldLeft(State()) { (state, event) =>
-    event.apply(state)
+  stateInThePast.onComplete {
+    case Success(state) => println(state)
+    case Failure(e) => println(e.getMessage)
   }
 
-
-
-  // Find the state of the object at the desired time.
-  val desiredState = state.find(_.timestamp == time)
-
- // Return the desired state.
- desiredState
-
 }
- */
-
-/*
-import akka.actor.ActorSystem
-import akka.persistence._
-
-object SnapshotUtils {
-  def findStateAtTime(system: ActorSystem, persistenceId: String, time: LocalDateTime): Option[ExampleState] = {
-    val snapshotCriteria = SnapshotSelectionCriteria.Latest
-    val persistence = Persistence(system)
-    val snapshot: Option[ExampleState] = persistence.snapshotStore
-      .loadAsync(persistenceId, snapshotCriteria, Long.MaxValue)
-      .map(_.asInstanceOf[ExampleState])
-      .value
-      .getOrElse(None)
-
-    val events: Seq[ExampleState] = persistence
-      .journalFor(persistenceId)
-      .currentEventsByPersistenceId(persistenceId, 0L, Long.MaxValue)
-      .map(_.event.asInstanceOf[ExampleState])
-      .toList
-
-    val state = events.foldLeft(State()) { (currentState, event) =>
-      event.applyTo(currentState)
-    }
-
-    val desiredState = state.find(_.timestamp == time)
-    desiredState
-  }
-}
-
- */

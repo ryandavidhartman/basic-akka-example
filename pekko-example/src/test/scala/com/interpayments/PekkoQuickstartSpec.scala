@@ -1,8 +1,7 @@
 //#full-example
 package com.interpayments
 
-//import org.apache.pekko.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import org.apache.pekko.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import com.interpayments.Greeter.Greet
 import com.interpayments.Greeter.Greeted
 import org.scalatest.wordspec.AnyWordSpecLike
