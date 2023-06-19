@@ -19,6 +19,8 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
   "org.apache.pekko" %% "pekko-persistence" % pekkoVersion,
   "org.apache.pekko" %% "pekko-persistence-query" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-persistence-jdbc" % "0.0.0+983-203cf893-SNAPSHOT",
+  "com.h2database" % "h2" % "2.1.214",
   "org.apache.pekko" %% "pekko-actor-testkit-typed" % pekkoVersion % Test,
   "org.scalatest" %% "scalatest" % "3.2.15" % Test
 )

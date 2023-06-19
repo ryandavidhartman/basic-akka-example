@@ -1,9 +1,11 @@
 package com.interpayments.persistence
 
 import com.interpayments.persistence.Messages._
+import org.apache.pekko.Done
 import org.apache.pekko.actor._
 import org.apache.pekko.pattern.ask
 import org.apache.pekko.persistence._
+import org.apache.pekko.persistence.jdbc.testkit.scaladsl.SchemaUtils
 import org.apache.pekko.util.Timeout
 
 import java.time.LocalDateTime.now
@@ -55,7 +57,8 @@ class ExamplePersistentActor extends PersistentActor with ActorLogging {
 object PekkoPersistenceExample extends App {
 
   //#actor-system
-  val system: ActorSystem = ActorSystem("pekko-persistence-example")
+  implicit val system: ActorSystem = ActorSystem("pekko-persistence-example")
+  val done: Future[Done] = SchemaUtils.createIfNotExists()
   val persistentActor = system.actorOf(Props[ExamplePersistentActor], "my-persistent-actor")
 
   (0 to 100).foreach(i => persistentActor ! Cmd(s"state", now.minusHours(100-i)))
