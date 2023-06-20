@@ -3,12 +3,12 @@ package com.interpayments.persistence
 import com.interpayments.persistence.Messages._
 import org.apache.pekko.Done
 import org.apache.pekko.actor._
-import org.apache.pekko.pattern.ask
+import org.apache.pekko.pattern.{ask, pipe}
 import org.apache.pekko.persistence._
 import org.apache.pekko.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import org.apache.pekko.persistence.jdbc.testkit.scaladsl.SchemaUtils
-import org.apache.pekko.persistence.query.PersistenceQuery
-import org.apache.pekko.stream.{ActorMaterializer, Materializer}
+import org.apache.pekko.persistence.query.{EventEnvelope, PersistenceQuery}
+import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.util.Timeout
 
@@ -17,6 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
+import scala.math.Ordered.orderingToOrdered
 import scala.util.{Failure, Success}
 
 class ExamplePersistentActor2 extends PersistentActor with ActorLogging {
@@ -45,35 +46,33 @@ class ExamplePersistentActor2 extends PersistentActor with ActorLogging {
       }
 
     case GetStateAtTimestamp(time) =>
-      //val originalSender = context.sender()
-      //val originalState = currentState
+      val stateAtTime: Future[Option[State]] = queryJournalForPreviousState().map {
+        states => states.filter(state => state.ts < time).lastOption
+      }
 
-      val sequenceNr = 50 //lastSequenceNr / 2
-
-      val bob = queryJournalForPreviousState(sequenceNr)
-
-      val stateAtTimestamp = State("not implemented", now)
-      //currentState = originalState
-      sender ! stateAtTimestamp
+      stateAtTime
+        .recover { case ex =>
+          log.error(ex.getMessage, ex)
+          Future.successful(None)
+        }.pipeTo(sender())
 
     case "print" => println(currentState)
   }
 
-  def queryJournalForPreviousState(seqNr: Long) = {
+  def queryJournalForPreviousState(): Future[Seq[State]] = {
     implicit val materializer: Materializer = Materializer(context.system)
-
-    println(s"Looking at seq number: $seqNr")
 
     // Initialize the JdbcReadJournal
     val readJournal: JdbcReadJournal = PersistenceQuery(context.system).readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
 
     // Query the journal for the state of the actor at the given sequence number
-    readJournal.eventsByPersistenceId(persistenceId, 0, seqNr+1)
-      .runWith(Sink.foreach(i => println(s"hi hi $i")))
-      .onComplete { _ =>
-        // Shutdown the ActorSystem after the query completes
-        println("DONE BITCH")
+    val eventSeq: Future[Seq[State]] = readJournal
+      .eventsByPersistenceId(persistenceId, 0, lastSequenceNr)
+      .map {
+        case EventEnvelope(_, _, l, event:State) => event
       }
+      .runWith(Sink.seq)
+    eventSeq
   }
 
 }
@@ -89,11 +88,13 @@ object PekkoPersistenceExample2 extends App {
 
   persistentActor ! "print"
 
-  implicit val timeout: Timeout = 10 seconds
-  val stateInThePast: Future[Any] = persistentActor ? GetStateAtTimestamp(now.minusHours(25))
+  val someTimeInThePast = now.minusHours(26).minusMinutes(30)
+
+  implicit val timeout: Timeout = 5 seconds
+  val stateInThePast: Future[Option[State]] = (persistentActor ? GetStateAtTimestamp(someTimeInThePast)).mapTo[Option[State]]
 
   stateInThePast.onComplete {
-    case Success(state) => println(state)
+    case Success(state) => println(s"The state at $someTimeInThePast was: [$state]")
     case Failure(e) => println(e.getMessage)
   }
 
